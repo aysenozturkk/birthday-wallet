@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doğum Günü Katkı</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #fef9f4;
+      color: #333;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      background: #fff;
+      border: 2px solid #f2d3c2;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    h2 {
+      color: #d45a3b;
+      margin-bottom: 12px;
+    }
+    .info {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    .iban-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    input {
+      font-size: 16px;
+      padding: 10px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: center;
+    }
+    button {
+      background-color: #d45a3b;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #b8492e;
+    }
+    .footer {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🎉 Doğum Günü Katkısı</h2>
+    <div class="info">
+      <strong>Mert</strong>'in doğum günü için pasta siparişi verdik. <br />
+      Kişi başı katkı: <strong>68 TL</strong>
+    </div>
+
+    <div class="iban-box">
+      <label for="iban"><strong>IBAN:</strong></label>
+      <input type="text" id="iban" value="TR88 0011 1000 0000 0113 2042 29" readonly />
+      <button onclick="copyIBAN()">IBAN'ı Kopyala</button>
+    </div>
+
+    <div class="footer">
+      Alıcı: Ayşen Öztürk
+    </div>
+  </div>
+
+  <script>
+    function copyIBAN() {
+      const ibanInput = document.getElementById("iban");
+      ibanInput.select();
+      ibanInput.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(ibanInput.value)
+        .then(() => alert("IBAN kopyalandı 📋"))
+        .catch(() => alert("Kopyalama başarısız oldu."));
+    }
+  </script>
+</body>
+</html>
