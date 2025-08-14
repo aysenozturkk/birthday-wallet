@@ -37,6 +37,7 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
+      margin-bottom: 20px;
     }
     input {
       font-size: 16px;
@@ -59,6 +60,25 @@
     button:hover {
       background-color: #b8492e;
     }
+    .recipient-section {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f8f4f1;
+      border-radius: 8px;
+      border: 1px solid #e0d0c4;
+    }
+    .recipient-name {
+      font-weight: bold;
+      color: #d45a3b;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      transition: background-color 0.2s;
+    }
+    .recipient-name:hover {
+      background-color: rgba(212, 90, 59, 0.1);
+    }
     .footer {
       margin-top: 16px;
       font-size: 13px;
@@ -73,18 +93,21 @@
       <strong>Furkan Erpay</strong>'ın doğum günü için pasta siparişi verdik. <br /><br />
       Kişi başı katkı: <strong>106 TL  </strong>
     </div>
-
     <div class="iban-box">
       <label for="iban"><strong>IBAN:</strong></label>
-      <input type="text" id="iban" value="TR74 0011 1000 0000 0089 9420 38" readonly />
+      <input type="text" id="iban" value="TR74 0011 1000 0000 0089 9420 38" readonly />
       <button onclick="copyIBAN()">IBAN'ı Kopyala</button>
     </div>
-
+    
+    <!-- Alıcı kısmı -->
+    <div class="recipient-section">
+      <strong>Alıcı:</strong> <span class="recipient-name" onclick="copyRecipient()" title="Kopyalamak için tıklayın">Cansel KÜÇÜKESKİCİ</span>
+    </div>
+    
     <div class="footer">
-      Alıcı: Cansel KÜÇÜKESKİCİ
+      Alıcı adını kopyalamak için üzerine tıklayın
     </div>
   </div>
-
   <script>
     function copyIBAN() {
       const ibanInput = document.getElementById("iban");
@@ -94,9 +117,25 @@
         .then(() => alert("IBAN kopyalandı 📋"))
         .catch(() => alert("Kopyalama başarısız oldu."));
     }
+
+    function copyRecipient() {
+      const recipientName = "Cansel KÜÇÜKESKİCİ";
+      const successMessage = document.getElementById("recipientCopySuccess");
+      
+      navigator.clipboard.writeText(recipientName)
+        .then(() => {
+          // Başarı mesajını göster
+          successMessage.classList.add("show");
+          
+          // 2 saniye sonra gizle
+          setTimeout(() => {
+            successMessage.classList.remove("show");
+          }, 2000);
+        })
+        .catch(() => {
+          alert("Alıcı adı kopyalanamadı.");
+        });
+    }
   </script>
 </body>
 </html>
-
-
-
