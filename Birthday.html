@@ -152,11 +152,6 @@
       
       try {
         const successful = document.execCommand('copy');
-        if (successful) {
-          alert("Alıcı adı kopyalandı 📋");
-        } else {
-          alert("Kopyalama başarısız oldu. Alıcı adı: " + text);
-        }
       } catch (err) {
         alert("Kopyalama başarısız oldu. Alıcı adı: " + text);
       }
@@ -166,3 +161,4 @@
   </script>
 </body>
 </html>
+
