@@ -120,21 +120,48 @@
 
     function copyRecipient() {
       const recipientName = "Cansel KÜÇÜKESKİCİ";
-      const successMessage = document.getElementById("recipientCopySuccess");
       
-      navigator.clipboard.writeText(recipientName)
-        .then(() => {
-          // Başarı mesajını göster
-          successMessage.classList.add("show");
-          
-          // 2 saniye sonra gizle
-          setTimeout(() => {
-            successMessage.classList.remove("show");
-          }, 2000);
-        })
-        .catch(() => {
-          alert("Alıcı adı kopyalanamadı.");
-        });
+      // Modern tarayıcılar için
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(recipientName)
+          .then(() => {
+            alert("Alıcı adı kopyalandı 📋");
+          })
+          .catch(() => {
+            fallbackCopyTextToClipboard(recipientName);
+          });
+      } else {
+        // Fallback yöntem
+        fallbackCopyTextToClipboard(recipientName);
+      }
+    }
+
+    function fallbackCopyTextToClipboard(text) {
+      // Geçici bir input elementi oluştur
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      
+      // Görünmez yap
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          alert("Alıcı adı kopyalandı 📋");
+        } else {
+          alert("Kopyalama başarısız oldu. Alıcı adı: " + text);
+        }
+      } catch (err) {
+        alert("Kopyalama başarısız oldu. Alıcı adı: " + text);
+      }
+      
+      document.body.removeChild(textArea);
     }
   </script>
 </body>
