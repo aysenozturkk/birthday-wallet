@@ -11,7 +11,7 @@
     
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #f7cca2 0%, #f5e6d3 100%);
+      background: linear-gradient(135deg, #f2c496 0%, #f5e6d3 100%);
       color: #333;
       padding: 20px;
       margin: 0;
@@ -25,8 +25,8 @@
       background: #fff;
       border: 2px solid #f2d3c2;
       border-radius: 20px;
-      padding: 40px;
-      max-width: 480px;
+      padding: 25px;
+      max-width: 500px;
       width: 100%;
       box-shadow: 0 8px 32px rgba(0,0,0,0.1);
       text-align: center;
@@ -108,6 +108,22 @@
       font-family: monospace;
       letter-spacing: 0.5px;
       min-width: 0;
+      width: 100%;
+    }
+    
+    .copy-field input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 12px 8px;
+      font-size: 13px;
+      text-align: center;
+      color: #333;
+      outline: none;
+      font-family: monospace;
+      letter-spacing: 1px;
+      min-width: 0;
+      width: 100%;
     }
     
     .copy-field .copy-text {
@@ -131,15 +147,46 @@
       white-space: nowrap;
       min-width: 90px;
       position: relative;
+      transform: scale(1);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     
     .copy-btn:hover {
       background: #b8492e;
-      transform: translateY(-1px);
+      transform: scale(1.02);
     }
     
     .copy-btn:active {
-      transform: translateY(0);
+      transform: scale(0.98);
+    }
+    
+    .copy-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: scale(1);
+    }
+    
+    .copy-btn.loading {
+      background: #999;
+      cursor: wait;
+    }
+    
+    .copy-btn.loading::after {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border: 2px solid transparent;
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-left: 6px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     
     .copy-btn.copied {
@@ -178,9 +225,33 @@
       pointer-events: none;
       transition: all 0.3s ease;
       white-space: nowrap;
+      z-index: 100;
     }
     
     .success-message.show {
+      opacity: 1;
+      top: -35px;
+    }
+    
+    .error-message {
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f44336;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    
+    .error-message.show {
       opacity: 1;
       top: -35px;
     }
@@ -192,33 +263,106 @@
       font-style: italic;
     }
     
-    @media (max-width: 480px) {
+    @media (max-width: 520px) {
       body {
-        padding: 16px;
+        padding: 8px;
       }
       
       .container {
-        padding: 24px;
+        padding: 20px 12px;
+        max-width: 100%;
+      }
+      
+      h2 {
+        font-size: 22px;
+      }
+      
+      .info {
+        font-size: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .copy-section {
+        padding: 12px;
       }
       
       .copy-field {
         flex-direction: column;
         gap: 8px;
+        padding: 4px;
       }
       
       .copy-field input,
       .copy-field .copy-text {
         text-align: center;
+        padding: 10px 4px;
       }
       
       .copy-field input {
         font-size: 12px;
-        padding: 10px;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.2px;
+      }
+      
+      .copy-field .copy-text {
+        font-size: 14px;
+        padding: 12px 4px;
       }
       
       .copy-btn {
         width: 100%;
+        padding: 12px;
+        font-size: 14px;
+      }
+      
+      .warning {
+        margin-top: 8px;
+        padding: 8px;
+        font-size: 12px;
+        text-align: center;
+      }
+      
+      .success-message {
+        font-size: 11px;
+        padding: 6px 12px;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .container {
+        padding: 16px 10px;
+      }
+      
+      h2 {
+        font-size: 20px;
+      }
+      
+      .copy-section {
+        padding: 10px;
+      }
+      
+      .copy-field {
+        padding: 2px;
+      }
+      
+      .copy-field input {
+        font-size: 10px;
+        letter-spacing: 0.1px;
+        padding: 8px 2px;
+      }
+      
+      .copy-field .copy-text {
+        padding: 10px 2px;
+      }
+      
+      .warning {
+        font-size: 11px;
+        padding: 6px;
+        margin-top: 6px;
+      }
+      
+      .copy-btn {
+        padding: 10px;
+        font-size: 13px;
       }
     }
   </style>
@@ -231,18 +375,19 @@
     
     <div class="info">
       <strong>Zuhal MEREY</strong>'in doğum günü için pasta siparişi verdik.<br><br>
-      Kişi başı katkı: <strong>100 TL</strong>
+      Kişi başı katkı: <strong>110 TL</strong>
     </div>
     
     <div class="copy-section">
       <div class="copy-item">
         <label>IBAN</label>
         <div class="copy-field">
-          <input type="text" value="TR88 0011 1000 0000 0113 2042 29" readonly />
-          <button class="copy-btn" onclick="copyToClipboard(this, 'TR88 0011 1000 0000 0113 2042 29')">
+          <input type="text" value="TR88 0011 1000 0000 0113 2042 29" readonly aria-label="IBAN numarası" />
+          <button class="copy-btn" onclick="copyToClipboard(this, 'TR88 0011 1000 0000 0113 2042 29')" aria-label="IBAN numarasını kopyala">
             Kopyala
           </button>
-          <div class="success-message">IBAN kopyalandı! 📋</div>
+          <div class="success-message" role="status" aria-live="polite">IBAN kopyalandı! 📋</div>
+          <div class="error-message" role="alert" aria-live="assertive">Kopyalama başarısız! 🚫</div>
         </div>
         <div class="warning">
           Pastayı teslim alan kişi değişebildiğinden IBAN bilgisi de değişebilir. Lütfen yukarıdaki IBAN'a ödeme yapınız.
@@ -252,11 +397,12 @@
       <div class="copy-item">
         <label>Alıcı</label>
         <div class="copy-field">
-          <div class="copy-text">Ayşen ÖZTÜRK</div>
-          <button class="copy-btn" onclick="copyToClipboard(this, 'Ayşen ÖZTÜRK')">
+          <div class="copy-text" aria-label="Alıcı adı">Ayşen ÖZTÜRK</div>
+          <button class="copy-btn" onclick="copyToClipboard(this, 'Ayşen ÖZTÜRK')" aria-label="Alıcı adını kopyala">
             Kopyala
           </button>
-          <div class="success-message">Alıcı adı kopyalandı! 📋</div>
+          <div class="success-message" role="status" aria-live="polite">Alıcı adı kopyalandı! 📋</div>
+          <div class="error-message" role="alert" aria-live="assertive">Kopyalama başarısız! 🚫</div>
         </div>
       </div>
     </div>
@@ -316,4 +462,3 @@
   </script>
 </body>
 </html>
-
