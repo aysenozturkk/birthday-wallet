@@ -5,162 +5,314 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Doğum Günü Katkı</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #fef9f4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #fef9f4 0%, #f5e6d3 100%);
       color: #333;
       padding: 20px;
+      margin: 0;
+      min-height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
+      justify-content: center;
     }
+    
     .container {
       background: #fff;
       border: 2px solid #f2d3c2;
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 400px;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 480px;
       width: 100%;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
       text-align: center;
+      position: relative;
     }
+    
+    .header {
+      margin-bottom: 24px;
+    }
+    
     h2 {
       color: #d45a3b;
-      margin-bottom: 12px;
+      margin: 0 0 16px 0;
+      font-size: 24px;
+      font-weight: 600;
     }
+    
     .info {
       font-size: 16px;
-      margin-bottom: 20px;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      color: #555;
     }
-    .iban-box {
+    
+    .info strong {
+      color: #d45a3b;
+    }
+    
+    .copy-section {
+      background: #f8f4f1;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #e8d5c4;
+    }
+    
+    .copy-item {
+      margin-bottom: 16px;
+    }
+    
+    .copy-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .copy-item label {
+      display: block;
+      font-weight: 600;
+      color: #d45a3b;
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .copy-field {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
+      gap: 12px;
+      background: white;
+      border: 2px solid #e0d0c4;
+      border-radius: 10px;
+      padding: 4px;
+      transition: border-color 0.3s ease;
     }
-    input {
-      font-size: 16px;
-      padding: 10px;
-      width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+    
+    .copy-field:hover {
+      border-color: #d45a3b;
+    }
+    
+    .copy-field input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 12px 8px;
+      font-size: 13px;
       text-align: center;
+      color: #333;
+      outline: none;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+      min-width: 0;
     }
-    button {
-      background-color: #d45a3b;
+    
+    .copy-field .copy-text {
+      flex: 1;
+      padding: 12px;
+      font-size: 15px;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    .copy-btn {
+      background: #d45a3b;
       color: white;
       border: none;
-      padding: 10px 16px;
+      padding: 12px 16px;
       border-radius: 8px;
-      font-size: 15px;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      min-width: 90px;
+      position: relative;
     }
-    button:hover {
-      background-color: #b8492e;
+    
+    .copy-btn:hover {
+      background: #b8492e;
+      transform: translateY(-1px);
     }
-    .recipient-section {
-      margin-top: 20px;
-      padding: 16px;
-      background: #f8f4f1;
+    
+    .copy-btn:active {
+      transform: translateY(0);
+    }
+    
+    .copy-btn.copied {
+      background: #4caf50;
+    }
+    
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
       border-radius: 8px;
-      border: 1px solid #e0d0c4;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #856404;
+      line-height: 1.4;
+      text-align: left;
     }
-    .recipient-name {
-      font-weight: bold;
-      color: #d45a3b;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      transition: background-color 0.2s;
+    
+    .warning::before {
+      content: "⚠️ ";
+      margin-right: 4px;
     }
-    .recipient-name:hover {
-      background-color: rgba(212, 90, 59, 0.1);
+    
+    .success-message {
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4caf50;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      white-space: nowrap;
     }
+    
+    .success-message.show {
+      opacity: 1;
+      top: -35px;
+    }
+    
     .footer {
-      margin-top: 16px;
+      margin-top: 24px;
       font-size: 13px;
       color: #888;
+      font-style: italic;
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+      
+      .container {
+        padding: 24px;
+      }
+      
+      .copy-field {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .copy-field input,
+      .copy-field .copy-text {
+        text-align: center;
+      }
+      
+      .copy-field input {
+        font-size: 12px;
+        padding: 10px;
+        letter-spacing: 0.3px;
+      }
+      
+      .copy-btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>🎉 Doğum Günü Katkısı</h2>
-    <div class="info">
-      <strong>Egehan Arıcı</strong>'nın doğum günü için pasta siparişi verdik. <br /><br />
-      Kişi başı katkı: <strong>95 TL  </strong>
-    </div>
-    <div class="iban-box">
-      <label for="iban"><strong>IBAN:</strong></label>
-      <input type="text" id="iban" value="TR88 0011 1000 0000 0113 2042 29" readonly />
-      <button onclick="copyIBAN()">IBAN'ı Kopyala</button>
+    <div class="header">
+      <h2>🎉 Doğum Günü Katkısı</h2>
     </div>
     
-    <!-- Alıcı kısmı -->
-    <div class="recipient-section">
-      <strong>Alıcı:</strong> <span class="recipient-name" onclick="copyRecipient()" title="Kopyalamak için tıklayın">Ayşen ÖZTÜRK</span>
+    <div class="info">
+      <strong>Zuhal MEREY</strong>'in doğum günü için pasta siparişi verdik.<br><br>
+      Kişi başı katkı: <strong>100 TL</strong>
+    </div>
+    
+    <div class="copy-section">
+      <div class="copy-item">
+        <label>IBAN</label>
+        <div class="copy-field">
+          <input type="text" value="TR88 0011 1000 0000 0113 2042 29" readonly />
+          <button class="copy-btn" onclick="copyToClipboard(this, 'TR88 0011 1000 0000 0113 2042 29')">
+            Kopyala
+          </button>
+          <div class="success-message">IBAN kopyalandı! 📋</div>
+        </div>
+        <div class="warning">
+          Pastayı teslim alan kişi değişebildiğinden IBAN bilgisi de değişebilir. Lütfen yukarıdaki IBAN'a ödeme yapınız.
+        </div>
+      </div>
+      
+      <div class="copy-item">
+        <label>Alıcı</label>
+        <div class="copy-field">
+          <div class="copy-text">Ayşen ÖZTÜRK</div>
+          <button class="copy-btn" onclick="copyToClipboard(this, 'Ayşen ÖZTÜRK')">
+            Kopyala
+          </button>
+          <div class="success-message">Alıcı adı kopyalandı! 📋</div>
+        </div>
+      </div>
     </div>
     
     <div class="footer">
-      Alıcı adını kopyalamak için üzerine tıklayın
+      💡 Bilgileri kopyalamak için butonlara tıklayın
     </div>
   </div>
+
   <script>
-    function copyIBAN() {
-      const ibanInput = document.getElementById("iban");
-      ibanInput.select();
-      ibanInput.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(ibanInput.value)
-        .then(() => alert("IBAN kopyalandı 📋"))
-        .catch(() => alert("Kopyalama başarısız oldu."));
-    }
-
-    function copyRecipient() {
-      const recipientName = "Ayşen ÖZTÜRK";
+    function copyToClipboard(button, text) {
+      const successMessage = button.parentElement.querySelector('.success-message');
       
-      // Modern tarayıcılar için
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(recipientName)
-          .then(() => {
-            alert("Alıcı adı kopyalandı 📋");
-          })
-          .catch(() => {
-            fallbackCopyTextToClipboard(recipientName);
-          });
-      } else {
-        // Fallback yöntem
-        fallbackCopyTextToClipboard(recipientName);
-      }
+      navigator.clipboard.writeText(text).then(() => {
+        // Butonu geçici olarak yeşil yap
+        button.classList.add('copied');
+        button.textContent = '✓ Kopyalandı';
+        
+        // Başarı mesajını göster
+        successMessage.classList.add('show');
+        
+        // 2 saniye sonra normale dön
+        setTimeout(() => {
+          button.classList.remove('copied');
+          button.textContent = 'Kopyala';
+          successMessage.classList.remove('show');
+        }, 2000);
+      }).catch(() => {
+        // Hata durumunda fallback
+        fallbackCopy(text);
+        showFeedback(button, successMessage);
+      });
     }
-
-    function fallbackCopyTextToClipboard(text) {
-      // Geçici bir input elementi oluştur
-      const textArea = document.createElement("textarea");
+    
+    function fallbackCopy(text) {
+      const textArea = document.createElement('textarea');
       textArea.value = text;
-      
-      // Görünmez yap
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      textArea.style.top = "-999999px";
-      
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
       document.body.appendChild(textArea);
-      textArea.focus();
       textArea.select();
-      
-      try {
-        const successful = document.execCommand('copy');
-      } catch (err) {
-        alert("Kopyalama başarısız oldu. Alıcı adı: " + text);
-      }
-      
+      document.execCommand('copy');
       document.body.removeChild(textArea);
+    }
+    
+    function showFeedback(button, successMessage) {
+      button.classList.add('copied');
+      button.textContent = '✓ Kopyalandı';
+      successMessage.classList.add('show');
+      
+      setTimeout(() => {
+        button.classList.remove('copied');
+        button.textContent = 'Kopyala';
+        successMessage.classList.remove('show');
+      }, 2000);
     }
   </script>
 </body>
 </html>
-
-
-
