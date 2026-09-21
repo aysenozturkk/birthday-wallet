@@ -262,6 +262,34 @@
       color: #888;
       font-style: italic;
     }
+
+    .whatsapp-share {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding: 7px 11px;
+      color: #60736a;
+      background: transparent;
+      border: 1px solid #d8e0dc;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .whatsapp-share:hover {
+      color: #297a50;
+      background: #f4faf7;
+      border-color: #a9c9b8;
+    }
+
+    .whatsapp-share svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
     
     @media (max-width: 520px) {
       body {
@@ -410,9 +438,22 @@
     <div class="footer">
       💡 Bilgileri kopyalamak için butonlara tıklayın
     </div>
+
+    <button class="whatsapp-share" type="button" onclick="shareOnWhatsApp()" aria-label="Bu sayfayı WhatsApp'ta paylaş">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M19.11 17.21c-.26-.13-1.53-.75-1.77-.84-.24-.09-.41-.13-.59.13-.17.26-.67.84-.82 1.01-.15.17-.3.2-.56.07-.26-.13-1.09-.4-2.08-1.28-.77-.69-1.29-1.53-1.44-1.79-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.59-1.42-.8-1.94-.21-.51-.43-.44-.59-.45h-.5c-.17 0-.45.06-.69.32-.24.26-.91.88-.91 2.15s.93 2.5 1.06 2.67c.13.17 1.82 2.78 4.41 3.9.62.27 1.1.43 1.47.55.62.2 1.18.17 1.63.1.5-.07 1.53-.62 1.75-1.23.22-.6.22-1.12.15-1.23-.06-.1-.24-.17-.5-.3zM16.03 3a12.82 12.82 0 0 0-11.1 19.24L3.12 29l6.92-1.81A12.81 12.81 0 1 0 16.03 3zm0 23.47c-1.89 0-3.75-.5-5.37-1.46l-.38-.23-4.11 1.08 1.1-4-.25-.41a10.66 10.66 0 1 1 9.01 5.02z"/>
+      </svg>
+      WhatsApp'ta paylaş
+    </button>
   </div>
 
   <script>
+    function shareOnWhatsApp() {
+      const pageUrl = window.location.href.split('#')[0];
+      const message = `Pasta katkı payı bilgilerine aşağıdaki bağlantıdan ulaşabilirsiniz:\n${pageUrl}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    }
+
     function copyToClipboard(button, text) {
       const successMessage = button.parentElement.querySelector('.success-message');
       
@@ -462,8 +503,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
