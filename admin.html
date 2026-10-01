@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="tr">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doğum günü · Yönetim</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f3ee;color:#322f2b;font:16px 'Segoe UI',sans-serif}main{max-width:1080px;margin:48px auto;padding:0 24px}h1{font-size:34px;margin:8px 0}h2{font-size:21px;margin-top:0}.eyebrow{color:#a84d33;font-size:13px;letter-spacing:2px}p{color:#71675f;line-height:1.6}.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:24px}.card{background:white;border:1px solid #e5ddd4;border-radius:18px;padding:26px;margin-top:24px}label{display:block;font-size:14px;font-weight:600;margin:18px 0 8px}input,select{width:100%;padding:12px;border:1px solid #d4cbc2;border-radius:8px;font:inherit;background:#fff}button{border:0;border-radius:8px;padding:12px 16px;font:inherit;cursor:pointer;background:#eee7df;color:#463c33}button.primary{background:#aa4d33;color:white}button:disabled{opacity:.5;cursor:wait}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.row{border-bottom:1px solid #eee;padding:12px 0}.row input{margin:5px 0}.row button{padding:6px 10px;font-size:13px}.check{display:flex;gap:10px;align-items:center}.check input{width:auto}.preview{background:#faf5ef;padding:18px;border-radius:10px;line-height:1.8;overflow-wrap:anywhere}.small{font-size:13px}#status{white-space:pre-wrap;padding:16px;border-radius:10px;margin-top:20px;line-height:1.5}#status:empty{display:none}.ok{background:#eaf4e9;color:#286339}.error{background:#fff0ea;color:#9e321c}@media(max-width:760px){main{margin:24px auto}.grid{grid-template-columns:1fr}h1{font-size:28px}}
+</style>
+<main>
+<div class="eyebrow">BIRTHDAY WALLET · YEREL PANEL</div>
+<h1>Bir sonraki kutlamayı hazırla.</h1>
+<p>Alıcıyı seç, katkı tutarını belirle ve yayınla. <span id="branch"></span></p>
+<div class="grid"><section class="card">
+<h2>Katkı bilgileri</h2>
+<label for="birthday">Doğum günü olan kişi</label><select id="birthday"></select>
+<div class="actions"><button id="auto" type="button">Sıradaki doğum gününü seç</button></div><p id="birthdayHint" class="small"></p>
+<label for="recipient">IBAN kişisi</label><select id="recipient"></select>
+<label for="cakeTotal">Pasta tutarı (TL)</label><input id="cakeTotal" type="number" min="0.01" max="1000000" step="0.01" placeholder="Örn. 2500">
+<label for="participantCount">Katkı yapacak kişi sayısı</label><input id="participantCount" type="number" min="1" max="100000" step="1" placeholder="Örn. 17">
+<p id="calculationHint" class="small" aria-live="polite">İki alanı doldurduğunda kişi başı katkı hesaplanır ve yukarı tam TL’ye yuvarlanır.</p>
+<label for="amount">Kişi başı katkı (TL)</label><input id="amount" type="number" min="0.01" max="1000000" step="0.01" required>
+<label class="check"><input id="active" type="checkbox">Katkı sayfası aktif</label>
+<label>Yayın önizlemesi</label><div id="preview" class="preview"></div>
+<div class="actions"><button id="save">Yerel kaydet</button><button id="publish" class="primary">Kaydet ve GitHub’a yayınla</button></div>
+<p class="small">Yayınla: dosyaları kaydeder, commit oluşturur ve mevcut dala pushlar.</p>
+</section><section class="card"><h2>IBAN listesi</h2><p class="small">Kişi adı bankadaki alıcı adı olmalı. Değişiklikler kaydetme veya yayınlama işlemiyle saklanır.</p><div id="ibanList"></div><div class="actions"><button id="add">+ IBAN kişisi ekle</button></div></section></div>
+<div id="status" role="status" aria-live="polite"></div>
+</main>
+<script>
+const token = '__TOKEN__';
+const $ = id => document.getElementById(id);
+let people = [], ibans = [], pending = false;
+function status(message, error=false) {$('status').textContent=message; $('status').className=error?'error':'ok';}
+async function api(url, data) {
+  const response=await fetch(url,{method:data?'POST':'GET',headers:{'X-Admin-Token':token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})});
+  const result=await response.json(); if(!response.ok) throw new Error(result.error); return result;
+}
+function recipientOptions() {
+  const selected=$('recipient').value;
+  $('recipient').replaceChildren(...ibans.map(item=>new Option(item.name||'Yeni kişi',item.name)));
+  if(ibans.some(item=>item.name===selected)) $('recipient').value=selected;
+  preview();
+}
+function renderIbans() {
+  $('ibanList').replaceChildren();
+  ibans.forEach((item,index)=>{
+    const row=document.createElement('div'); row.className='row';
+    const name=document.createElement('input');name.value=item.name;name.placeholder='Alıcı adı';name.setAttribute('aria-label','Alıcı adı');
+    const iban=document.createElement('input');iban.value=item.iban;iban.placeholder='TR…';iban.setAttribute('aria-label','IBAN');
+    name.oninput=()=>{const selected=$('recipient').value===item.name;item.name=name.value;recipientOptions();if(selected)$('recipient').value=item.name;preview();};
+    iban.oninput=()=>{item.iban=iban.value;preview();};
+    const remove=document.createElement('button');remove.textContent='Kaldır';remove.onclick=()=>{ibans.splice(index,1);renderIbans();};
+    row.append(name,iban,remove);$('ibanList').append(row);
+  });recipientOptions();
+}
+function autoBirthday() {
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Istanbul'}).format(new Date());
+  const year=Number(today.slice(0,4));
+  const upcoming=people.map(person=>{let date=`${year}-${person.BirthDate.slice(5)}`;if(date<today)date=`${year+1}-${person.BirthDate.slice(5)}`;return {person,date};}).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!upcoming.length)return;
+  $('birthday').value=upcoming[0].person.Name;
+  const same=upcoming.filter(item=>item.date===upcoming[0].date);
+  $('birthdayHint').textContent=`${upcoming[0].date===today?'Bugün':'Sıradaki tarih: '+upcoming[0].date} · ${same.map(item=>item.person.Name).join(', ')}${same.length>1?' — seçimden birini belirleyebilirsin.':''}`;preview();
+}
+function calculateContribution() {
+  const totalInput=$('cakeTotal'), countInput=$('participantCount');
+  if(!totalInput.value || !countInput.value) {
+    $('calculationHint').textContent='İki alanı doldurduğunda kişi başı katkı hesaplanır ve yukarı tam TL’ye yuvarlanır.';
+    return;
+  }
+  if(!totalInput.checkValidity() || !countInput.checkValidity()) {
+    $('calculationHint').textContent='Pozitif pasta tutarı ve tam sayı kişi sayısı girin.';
+    return;
+  }
+  const totalKurus=Math.round(Number(totalInput.value)*100);
+  const count=Number(countInput.value);
+  const amount=Math.ceil(totalKurus/(count*100));
+  $('amount').value=amount;
+  const format=value=>new Intl.NumberFormat('tr-TR',{maximumFractionDigits:2}).format(value);
+  $('calculationHint').textContent=`${format(totalKurus/100)} TL ÷ ${count} kişi → ${format(amount)} TL / kişi. Toplam ${format(amount*count)} TL; fark ${format((amount*count*100-totalKurus)/100)} TL. Kişi başı tutarı elle değiştirebilirsin.`;
+  preview();
+}
+function preview() {
+  const recipient=ibans.find(item=>item.name===$('recipient').value);
+  $('preview').replaceChildren();
+  const lines=$('active').checked?[`${$('birthday').value} için doğum günü katkısı`,`${$('amount').value||'—'} TL / kişi`,recipient?.name||'Alıcı seç',recipient?.iban||'IBAN gir'] : ['Şu anda aktif bir doğum günü katkısı bulunmuyor.'];
+  lines.forEach(line=>{const el=document.createElement('div');el.textContent=line;$('preview').append(el);});
+}
+async function save(publish) {
+  if(pending)return;
+  if(!$('amount').reportValidity())return;
+  pending=true; document.querySelectorAll('button,input,select').forEach(el=>el.disabled=true);
+  status(publish?'Kaydediliyor ve GitHub’a gönderiliyor…':'Kaydediliyor…');
+  try {const result=await api(publish?'/api/publish':'/api/save',{birthdayPerson:$('birthday').value,recipient:$('recipient').value,amount:$('amount').value,active:$('active').checked,ibans});status(result.message);}catch(error){status(error.message,true);}finally{pending=false;document.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);}
+}
+$('auto').onclick=autoBirthday;$('add').onclick=()=>{ibans.push({name:'',iban:''});renderIbans();};
+$('save').onclick=()=>save(false);$('publish').onclick=()=>save(true);
+['cakeTotal','participantCount'].forEach(id=>$(id).addEventListener('input',calculateContribution));
+$('amount').addEventListener('input',()=>{$('calculationHint').textContent='Kişi başı katkı elle belirlendi. Pasta tutarı veya kişi sayısını değiştirerek yeniden hesaplayabilirsin.';});
+['birthday','recipient','amount','active'].forEach(id=>$(id).addEventListener('input',preview));
+api('/api/state').then(data=>{people=data.people;ibans=data.ibans;$('branch').textContent=`Git dalı: ${data.branch}`;$('birthday').replaceChildren(...people.map(p=>new Option(p.Name,p.Name)));renderIbans();$('amount').value=data.contribution.amount;$('active').checked=data.contribution.active;$('recipient').value=ibans.find(p=>p.name===data.contribution.recipient)?.name||ibans[0]?.name||'';autoBirthday();}).catch(error=>status(error.message,true));
+</script>
+</html>
