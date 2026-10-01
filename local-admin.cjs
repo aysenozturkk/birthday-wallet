@@ -2,7 +2,9 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const {execFileSync, spawn} = require('node:child_process');
+const {execFile, spawn} = require('node:child_process');
+const {promisify} = require('node:util');
+const runFile = promisify(execFile);
 const root = __dirname;
 const token = crypto.randomBytes(32).toString('hex');
 const port = Number(process.env.BIRTHDAY_ADMIN_PORT || 8765);
@@ -13,7 +15,24 @@ const write = (name, data) => {
   fs.writeFileSync(target + '.tmp', JSON.stringify(data, null, 2) + '\n', 'utf8');
   fs.renameSync(target + '.tmp', target);
 };
-const git = args => execFileSync('git', args, {cwd: root, encoding: 'utf8', timeout: 60000, windowsHide: true, env: {...process.env, GIT_TERMINAL_PROMPT: '0'}}).trim();
+function log(message) {
+  const line = `[${new Date().toISOString()}] ${message}`;
+  console.log(line);
+  try {fs.appendFileSync(path.join(root, 'admin.log'), line + '\n', 'utf8');}
+  catch (error) {console.error('Log yazılamadı:', error.message);}
+}
+const git = async args => {
+  const label = args[0];
+  log(`Git ${label}: başladı`);
+  try {
+    const result = await runFile('git', args, {cwd: root, encoding: 'utf8', timeout: 60000, windowsHide: true, env: {...process.env, GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: 'ssh -o BatchMode=yes -o ConnectTimeout=15'}});
+    log(`Git ${label}: tamamlandı${result.stderr.trim() ? '\n' + result.stderr.trim() : ''}`);
+    return result.stdout.trim();
+  } catch (error) {
+    log(`Git ${label}: HATA\n${error.stderr?.trim() || error.message}`);
+    throw error;
+  }
+};
 function validateIbans(list) {
   if (!Array.isArray(list) || !list.length) throw new Error('En az bir IBAN kişisi gerekli.');
   const names = new Set();
@@ -40,11 +59,12 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.headers['x-admin-token'] !== token) return send(403, {error: 'Paneli yeniden açın.'});
   try {
-    if (req.method === 'GET' && req.url === '/api/state') return send(200, {people: read('people.json'), ibans: read('ibans.json'), contribution: read('contribution.json'), branch: git(['branch', '--show-current'])});
+    if (req.method === 'GET' && req.url === '/api/state') return send(200, {people: read('people.json'), ibans: read('ibans.json'), contribution: read('contribution.json'), branch: await git(['branch', '--show-current'])});
     if (req.method !== 'POST' || !['/api/save', '/api/publish'].includes(req.url)) return send(404, {error: 'Bulunamadı.'});
     if (req.headers.origin !== `http://${req.headers.host}`) return send(403, {error: 'Geçersiz kaynak.'});
     if (busy) return send(409, {error: 'İşlem sürüyor, lütfen bekleyin.'});
     busy = true;
+    log(`${req.url}: işlem başladı`);
     let saved = false;
     try {
       let body = '';
@@ -57,25 +77,44 @@ const server = http.createServer(async (req, res) => {
       if (!person || !recipient || !Number.isFinite(amount) || amount <= 0 || amount > 1000000 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.00001 || typeof data.active !== 'boolean') throw new Error('Kişileri ve pozitif tutarı kontrol edin (en fazla iki ondalık basamak).');
       const publishing = req.url === '/api/publish';
       if (publishing) {
-        if (!git(['branch', '--show-current'])) throw new Error('Git dalı seçili değil.');
-        const staged = git(['diff', '--cached', '--name-only']).split('\n').filter(Boolean);
+        if (!await git(['branch', '--show-current'])) throw new Error('Git dalı seçili değil.');
+        const staged = (await git(['diff', '--cached', '--name-only'])).split('\n').filter(Boolean);
         if (staged.some(p => !managed.includes(p))) throw new Error('Başka dosyalar Git staging alanında. Önce bunları ayrı commit edin.');
       }
       write('ibans.json', ibans);
       write('contribution.json', {active: data.active, birthdayPerson: person.Name, amount, currency: 'TL', iban: recipient.iban, recipient: recipient.name, updatedAt: new Intl.DateTimeFormat('sv-SE', {timeZone: 'Europe/Istanbul'}).format(new Date())});
       saved = true;
+      log('Yerel dosyalar kaydedildi.');
       if (!publishing) return send(200, {message: 'Bilgiler yerel dosyalara kaydedildi.'});
-      git(['add', '--', ...managed]);
-      if (git(['diff', '--cached', '--name-only'])) git(['commit', '-m', `Update birthday contribution for ${person.Name}`]);
-      const branch = git(['branch', '--show-current']);
-      git(['push', 'origin', branch]);
+      await git(['add', '--', ...managed]);
+      if (await git(['diff', '--cached', '--name-only'])) await git(['commit', '-m', `Update birthday contribution for ${person.Name}`]);
+      const branch = await git(['branch', '--show-current']);
+      await git(['push', 'origin', branch]);
+      log('Yayın tamamlandı.');
       send(200, {message: 'Kaydedildi ve GitHub’a pushlandı. GitHub Pages yayın akışı çalışabilir.'});
     } catch (error) {
+      log(`${req.url}: HATA\n${error.stderr?.toString() || error.message}`);
       send(400, {error: (saved ? 'Dosyalar kaydedildi; Git işlemi tamamlanamadı. Yeniden yayınlamayı deneyebilirsiniz.\n' : '') + (error.stderr?.toString() || error.message)});
     } finally {busy = false;}
-  } catch (error) {send(500, {error: error.message});}
+  } catch (error) {log(`HATA: ${error.message}`); send(500, {error: error.message});}
 });
-server.listen(port, '127.0.0.1', () => {
+function checkGitWriteAccess() {
+  const checkPath = path.join(root, '.git', `panel-write-check-${process.pid}-${crypto.randomBytes(6).toString('hex')}.tmp`);
+  let created = false;
+  try {
+    fs.writeFileSync(checkPath, '', {flag: 'wx'});
+    created = true;
+    fs.unlinkSync(checkPath);
+    return true;
+  } catch (error) {
+    if (created) {try {fs.unlinkSync(checkPath);} catch {}}
+    log(`Git klasörüne yazma izni yok: ${error.message}`);
+    console.error('Panel başlatılmadı. yonetim.bat dosyasını Windows Dosya Gezgini üzerinden normal kullanıcı oturumunda açın. Sorun devam ederse .git klasörünün yazma izinlerini kontrol edin.');
+    process.exitCode = 1;
+    return false;
+  }
+}
+if (checkGitWriteAccess()) server.listen(port, '127.0.0.1', () => {
   const url = `http://127.0.0.1:${port}`;
   console.log(`Yönetim paneli: ${url}\nKapatmak için Ctrl+C.`);
   if (!process.argv.includes('--no-open')) spawn('cmd.exe', ['/c', 'start', '', url], {windowsHide: true});

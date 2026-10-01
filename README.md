@@ -11,4 +11,8 @@ Windows'ta `yonetim.bat` dosyasına çift tıklayın. Başlatıcı PATH üzerind
 
 GitHub SSH erişimi ve Git kullanıcı adı/e-postası bilgisayarda ayarlı olmalıdır. Push reddedilirse panel hata gösterir ve kaydedilen dosyaları korur; uzak değişiklikleri inceleyip birleştirdikten sonra tekrar yayınlayabilirsiniz. Panel force push yapmaz. Başka dosyalar staging alanındaysa yayın durur.
 
+İşlem sırasında buton bekleme durumunu gösterir; sonuç ve hatalar butonun altında görünür. Sunucu her işlem aşamasını ve Git hatalarını yerel `admin.log` dosyasına ve terminale yazar. Log dosyası Git'e gönderilmez. SSH işlemi parola istemeden çalışır; erişim sorunu veya zaman aşımı hata olarak bildirilir. Sunucu kodu değiştiğinde çalışan terminali Ctrl+C ile kapatıp `yonetim.bat` dosyasını yeniden açın ve tarayıcıyı yenileyin.
+
+Başlangıçta `.git` klasörüne yazma erişimi kontrol edilir. Erişim yoksa panel başlatılmaz. Başlatıcıyı Windows Dosya Gezgini'nden açın; Codex'in kısıtlı terminalinden başlatılan sunucu Git'e yazamayabilir. Panel zaten çalışıyorsa başlatıcı mevcut paneli açar; sunucunun oturumunu değiştirmek için önce çalışan sunucuyu kapatın.
+
 `Birthday.html` güncel katkıyı `contribution.json` dosyasından okur; her etkinlikte HTML düzenlemek gerekmez. GitHub Pages'in bu dalı yayınlayacak şekilde önceden ayarlanmış olması gerekir. IBAN listesi repoya pushlanır ve Pages üzerinden erişilebilir; listeye sadece paylaşılacak hesapları ekleyin. Yönetim işlemleri yalnızca yerelde çalışan sunucudan yapılabilir.

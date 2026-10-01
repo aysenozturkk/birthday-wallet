@@ -21,9 +21,9 @@
 <label class="check"><input id="active" type="checkbox">Katkı sayfası aktif</label>
 <label>Yayın önizlemesi</label><div id="preview" class="preview"></div>
 <div class="actions"><button id="save">Yerel kaydet</button><button id="publish" class="primary">Kaydet ve GitHub’a yayınla</button></div>
+<div id="status" role="status" aria-live="polite"></div>
 <p class="small">Yayınla: dosyaları kaydeder, commit oluşturur ve mevcut dala pushlar.</p>
 </section><section class="card"><h2>IBAN listesi</h2><p class="small">Kişi adı bankadaki alıcı adı olmalı. Değişiklikler kaydetme veya yayınlama işlemiyle saklanır.</p><div id="ibanList"></div><div class="actions"><button id="add">+ IBAN kişisi ekle</button></div></section></div>
-<div id="status" role="status" aria-live="polite"></div>
 </main>
 <script>
 const token = '__TOKEN__';
@@ -31,7 +31,7 @@ const $ = id => document.getElementById(id);
 let people = [], ibans = [], pending = false;
 function status(message, error=false) {$('status').textContent=message; $('status').className=error?'error':'ok';}
 async function api(url, data) {
-  const response=await fetch(url,{method:data?'POST':'GET',headers:{'X-Admin-Token':token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})});
+  const response=await fetch(url,{signal:AbortSignal.timeout(180000),method:data?'POST':'GET',headers:{'X-Admin-Token':token,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})});
   const result=await response.json(); if(!response.ok) throw new Error(result.error); return result;
 }
 function recipientOptions() {
@@ -87,10 +87,12 @@ function preview() {
 }
 async function save(publish) {
   if(pending)return;
-  if(!$('amount').reportValidity())return;
+  if(!$('amount').reportValidity()){status('Geçerli bir kişi başı katkı tutarı girin.',true);return;}
+  const button=$(publish?'publish':'save'), originalText=button.textContent;
+  button.textContent=publish?'GitHub’a gönderiliyor…':'Kaydediliyor…';
   pending=true; document.querySelectorAll('button,input,select').forEach(el=>el.disabled=true);
   status(publish?'Kaydediliyor ve GitHub’a gönderiliyor…':'Kaydediliyor…');
-  try {const result=await api(publish?'/api/publish':'/api/save',{birthdayPerson:$('birthday').value,recipient:$('recipient').value,amount:$('amount').value,active:$('active').checked,ibans});status(result.message);}catch(error){status(error.message,true);}finally{pending=false;document.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);}
+  try {const result=await api(publish?'/api/publish':'/api/save',{birthdayPerson:$('birthday').value,recipient:$('recipient').value,amount:$('amount').value,active:$('active').checked,ibans});status(result.message);}catch(error){console.error('Kaydetme/yayınlama hatası:',error);status((error.name==='TimeoutError'?'Yanıt zaman aşımına uğradı. İşlem sonucunu admin.log dosyasından kontrol edin.':error.message==='Failed to fetch'?'Yerel sunucuya ulaşılamadı. yonetim.bat dosyasının açık olduğunu kontrol edin.':error.message)+'\nSunucu işlem ayrıntıları: admin.log',true);}finally{pending=false;button.textContent=originalText;document.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);}
 }
 $('auto').onclick=autoBirthday;$('add').onclick=()=>{ibans.push({name:'',iban:''});renderIbans();};
 $('save').onclick=()=>save(false);$('publish').onclick=()=>save(true);
